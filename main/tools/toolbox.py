@@ -89,7 +89,7 @@ def crossover_operation(population, method, prob):
     return crossed_offspring
 
 
-def arithmetic_wheight_crossover(parent1: Individual, parent2: Individual):
+def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
     """Crossover operation"""
     alpha = np.random.rand()
     l1 = len(parent1.portfolio_idx)

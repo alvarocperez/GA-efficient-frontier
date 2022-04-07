@@ -32,10 +32,10 @@ class Individual:
         """Returns the sharpe ratio of the portfolio, also acts as the fitness function to maximize."""
         hist_ret = np.log(self.prices()).diff().dropna()
         cov_returns = hist_ret.cov()
-        rent_cartera = hist_ret.mean().T @ self.portfolio_weights
+        ret = hist_ret.mean().T @ self.portfolio_weights
         risk = np.sqrt(self.portfolio_weights @ cov_returns.values @ self.portfolio_weights)
-        ratio_sharpe = rent_cartera.sum() / risk
-        return ratio_sharpe
+        sharpe_ratio = ret.sum() / risk
+        return sharpe_ratio
 
     def expected_return(self):
         """Returns the mean expected returns of the portfolio."""

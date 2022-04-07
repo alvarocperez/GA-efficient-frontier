@@ -3,11 +3,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from collections import defaultdict
+from typing import Callable, NewType, Tuple
 
 from main.individual.individual import Individual
 
 
-def selection_rank_with_population_replacement_elite(population: list[Individual], elite_size=0.1, new_pop=0.2):
+def selection_rank_with_population_replacement_elite(
+    population: list[Individual], elite_size=0.1, new_pop=0.2
+) -> list[Individual]:
     """Selection method."""
     sorted_individuals = sorted(population, key=lambda ind: ind.get_sharpe(), reverse=True)
     best_n_individuals = int(np.floor(len(sorted_individuals) * elite_size))
@@ -31,7 +34,7 @@ def selection_rank_with_population_replacement_elite(population: list[Individual
     return selected
 
 
-def mutation_operation(population, method, prob):
+def mutation_operation(population: list[Individual], method: Callable, prob: float) -> list[Individual]:
     """Decides if the current individual must mutate or not"""
     mutated_offspring = []
     for mutant in population:
@@ -43,7 +46,7 @@ def mutation_operation(population, method, prob):
     return mutated_offspring
 
 
-def mutation_stocks_fitness_driven(ind, max_tries=3):
+def mutation_stocks_fitness_driven(ind: Individual, max_tries: int = 3) -> Individual:
     """Mutation operation."""
     for t in range(0, max_tries):
         mut_s = copy.deepcopy(ind.portfolio_idx)
@@ -58,15 +61,15 @@ def mutation_stocks_fitness_driven(ind, max_tries=3):
     return ind
 
 
-def crossover_operation(population, method, prob):
+def crossover_operation(population: list[Individual], method: Callable, prob: float) -> list[Individual]:
     """Decides if the current individual must be selected for crossover operation.
 
-    :arg:
+    Args:
         population (List[Individual]): Current population.
-        method (Function): Function to use in crossover operation.
+        method (Callable): Function to use in crossover operation.
         prob (float): float between 0 and 1.
 
-    :return:
+    Returns:
         crossed_offspring (List[Individual]): crossed offspring population.
 
     """
@@ -89,7 +92,7 @@ def crossover_operation(population, method, prob):
     return crossed_offspring
 
 
-def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
+def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual) -> Tuple[Individual, Individual]:
     """Crossover operation"""
     alpha = np.random.rand()
     l1 = len(parent1.portfolio_idx)
@@ -190,7 +193,14 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
     return child1, child2
 
 
-def stats(population, best_ind, fit_avg, fit_best, fit_best_ever):
+def stats(
+    population: list[Individual],
+    best_ind: Individual,
+    fit_avg: list[float],
+    fit_best: list[float],
+    fit_best_ever: list[float],
+) -> Tuple[Individual, list[float], list[float], list[float]]:
+
     best_of_generation = max(population, key=lambda ind: ind.get_sharpe())
     if best_ind.get_sharpe() < best_of_generation.get_sharpe():
         best_ind = best_of_generation
@@ -201,7 +211,7 @@ def stats(population, best_ind, fit_avg, fit_best, fit_best_ever):
     return best_ind, fit_avg, fit_best, fit_best_ever
 
 
-def plot_stats(fit_avg, fit_best_ever, title):
+def plot_stats(fit_avg: list[float], fit_best_ever: list[float], title: str):
     plt.plot(fit_avg, label="Average Fitness of Gen")
     plt.plot(fit_best_ever, label="Best Fitness")
     plt.title(title)
@@ -209,7 +219,7 @@ def plot_stats(fit_avg, fit_best_ever, title):
     plt.show()
 
 
-def dupl_pmcguire(seq):
+def dupl_pmcguire(seq: list[int]) -> dict:
     """Optimal way to classify repeated values."""
     tally = defaultdict(list)
     for i, item in enumerate(seq):
@@ -217,7 +227,10 @@ def dupl_pmcguire(seq):
     return dict([(key, locs) for key, locs in tally.items() if len(locs) > 1])
 
 
-def merge_duplicates(portfolio_idx, porfolio_weights):
+Array = NewType("Array", np.array)
+
+
+def merge_duplicates(portfolio_idx: list[int], porfolio_weights: list[float]) -> Tuple[Array, Array]:
     """Merge duplicated values."""
     where = dupl_pmcguire(portfolio_idx)
     pf = []

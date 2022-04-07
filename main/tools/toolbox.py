@@ -83,7 +83,7 @@ def crossover_operation(population, method, prob):
     best_of_population = max(population, key=lambda ind: ind.get_sharpe())
     best_of_offspring = max(crossed_offspring, key=lambda ind: ind.get_sharpe())
 
-    if best_of_population.get_sharpe() > best_of_offspring.get_sharpe():  # a bit of elitism could be healthy
+    if best_of_population.get_sharpe() > best_of_offspring.get_sharpe():  # TODO: It's not an ordered list!!!
         crossed_offspring[-1] = best_of_population
 
     return crossed_offspring
@@ -100,7 +100,6 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
     p2f = parent2.portfolio_idx
 
     if l1 + l2 > 20:
-        # for child 1
         from_p1 = int(np.floor(l1 * 0.5)) if l1 % 2 == 0 else int(np.ceil(l1 * 0.5))
         from_p2 = int(np.floor(l2 * 0.5)) if l2 % 2 == 0 else int(np.ceil(l2 * 0.5))
 
@@ -114,9 +113,7 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
         c1w.extend(list(p2w[p2_idx]))
         c1w /= sum(c1w)
 
-        # for child 2
-
-        l = (l1 + l2) % 20  # if his length is 1
+        l = (l1 + l2) % 20
 
         if l == 0:
 
@@ -141,7 +138,6 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
                 c2pf = p2f[p_idx]
                 c2w = [1]
         else:
-
             p = int(np.floor(l * 0.5)) if l1 % 2 == 0 else int(np.ceil(l * 0.5))
             delta = l - p
             p1_idx = random.sample(range(0, l1), p)
@@ -167,7 +163,7 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
 
     else:
         cf = list(p1f)
-        cf.extend(list(p2f))  # child folio
+        cf.extend(list(p2f))
 
         c1w1 = p1w * alpha
         c1w2 = p2w * (1 - alpha)
@@ -232,8 +228,8 @@ def merge_duplicates(portfolio_idx, porfolio_weights):
     portfolio_idx = np.delete(portfolio_idx, idx)
 
     for v in where.values():
-        pesos = sum(porfolio_weights[v])
-        w.append(pesos)
+        weights = sum(porfolio_weights[v])
+        w.append(weights)
 
     porfolio_weights = np.delete(porfolio_weights, idx)
     pf.extend(portfolio_idx)

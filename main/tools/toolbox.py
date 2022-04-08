@@ -12,7 +12,17 @@ from main.individual.individual import Individual
 def selection_rank_with_population_replacement_elite(
     population: list[Individual], elite_size=0.1, new_pop=0.2
 ) -> list[Individual]:
-    """Select the best individuals for the previous generation method."""
+    """Select the best individuals for the previous generation method.
+
+    Args:
+        population: The current population.
+        elite_size: The best n percent of individuals to include in the next generation.
+        new_pop: The n percent of migrants who will join the population. (new individuals)
+
+    Returns:
+        selected: Selected individuals.
+
+    """
     sorted_individuals = sorted(population, key=lambda ind: ind.get_sharpe(), reverse=True)
     best_n_individuals = int(np.floor(len(sorted_individuals) * elite_size))
     new_individuals = int(np.floor(len(sorted_individuals) * new_pop))
@@ -44,7 +54,7 @@ def mutation_operation(population: list[Individual], method: Callable, prob: flo
         prob: float between 0 and 1.
 
     Returns:
-        mutated_offspring: mutated population.
+        mutated_offspring: Mutated population.
 
     """
     mutated_offspring = []
@@ -68,8 +78,8 @@ def mutation_stocks_fitness_driven(ind: Individual, max_tries: int = 3) -> Indiv
     max_retries.
 
     Args:
-        ind: the given individual to mutate.
-        max_tries: max number of retries.
+        ind: The given individual to mutate.
+        max_tries: Max number of retries.
 
     Returns:
         Initial or mutated individual.
@@ -97,7 +107,7 @@ def crossover_operation(population: list[Individual], method: Callable, prob: fl
         prob: float between 0 and 1.
 
     Returns:
-        crossed_offspring: crossed offspring population.
+        crossed_offspring: Crossed offspring population.
 
     """
     crossed_offspring = []
@@ -120,7 +130,33 @@ def crossover_operation(population: list[Individual], method: Callable, prob: fl
 
 
 def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual) -> Tuple[Individual, Individual]:
-    """Crossover operation."""
+    """Crossover operation.
+
+    Since this approach allows for mutations among the assets of the individuals,
+    I have limited the maximum number of assets that an individual can have to 20.
+    This means that mod 20 will be used to prevent the number of assets of the individual
+    from getting larger and larger.
+
+    For each pair of individuals whose number of assets adds up to less than 20 assets,
+    the offspring will have the sum of both parents (avoiding duplicities) and the weights
+    will be inherited according to the following equation:
+
+    > Offspring A = α ∗ Parent1 + (1 -α) ∗ Parent2.
+    > Offspring B = (1 -α) ∗ Parent1 + α ∗ Parent2
+
+    Where α is a random number between 0 and 1.
+
+    On the other hand, if two parents have 14 and 17 assets respectively due to work in
+    module 20 their offspring will have 11 assets.
+
+    Args:
+        parent1: First individual.
+        parent2: Second individual.
+
+    Returns:
+        child1 & child2 both crossed offspring.
+
+    """
     alpha = np.random.rand()
     l1 = len(parent1.portfolio_idx)
     l2 = len(parent2.portfolio_idx)
@@ -227,7 +263,19 @@ def stats(
     fit_best: list[float],
     fit_best_ever: list[float],
 ) -> Tuple[Individual, list[float], list[float], list[float]]:
-    """Return the most relevant individuals."""
+    """Return the most relevant individuals.
+
+    Args:
+        population: Current population.
+        best_ind: Previous population bet individual.
+        fit_avg: Fitness average of current population.
+        fit_best: Fitness of the best individual for the current population.
+        fit_best_ever: The best fittness ever registered.
+
+    Returns:
+        Tuple[best_ind, fit_avg, fit_best, fit_best_ever]: updated values for the current population.
+
+    """
     best_of_generation = max(population, key=lambda ind: ind.get_sharpe())
     if best_ind.get_sharpe() < best_of_generation.get_sharpe():
         best_ind = best_of_generation
@@ -239,11 +287,40 @@ def stats(
 
 
 def plot_stats(fit_avg: list[float], fit_best_ever: list[float], title: str):
-    """Plot the best and the average fitness for each generation."""
+    """Plot the best and the average fitness for each generation.
+
+    Args:
+        fit_avg: List of fitness averages.
+        fit_best_ever: The best fitness for each generation.
+        title: Just a title.
+
+    """
     plt.plot(fit_avg, label="Average Fitness of Gen")
     plt.plot(fit_best_ever, label="Best Fitness")
     plt.title(title)
     plt.legend(loc="lower right")
+    plt.show()
+
+
+def plot_frontier(risk: list[float], ret: list[float], lr: Individual, br: Individual, bs: Individual):
+    """Plot Markowitz efficient frontier.
+
+    Args:
+        risk: List of all individuals risk.
+        ret: List of all individuals returns.
+        lr: Lowest risk individual.
+        br: Best return individual.
+        bs: Best sharpe ratio individual.
+
+    """
+    plt.figure(figsize=(20, 15))
+    plt.scatter(risk, ret, c=list(np.divide(ret, risk)), cmap="viridis", linewidths=1)
+    plt.colorbar(label="Sharpe Ratio")
+    plt.xlabel("Volatility")
+    plt.ylabel("Return")
+    plt.scatter(lr.risk(), lr.expected_return(), s=500, c="red", marker=(5, 2))
+    plt.scatter(bs.risk(), bs.expected_return(), s=300, c="green", marker=(5, 1))
+    plt.scatter(br.risk(), br.expected_return(), s=300, c="yellow", marker=(5, 0))
     plt.show()
 
 
@@ -272,12 +349,12 @@ def merge_duplicates(portfolio_idx: ArrayLike, porfolio_weights: ArrayLike) -> T
     aggregated sum of all repeated instances.
 
     Args:
-        portfolio_idx:
-        porfolio_weights:
+        portfolio_idx: Indices of the current allocations.
+        porfolio_weights: Weights for each allocation.
 
     Returns:
-        pfi: indices if the stocks in the asset universe.
-        pfw: weights for each asset.
+        pfi: Indices if the stocks in the asset universe.
+        pfw: Weights for each asset.
 
     """
     where = dupl_pmcguire(portfolio_idx)

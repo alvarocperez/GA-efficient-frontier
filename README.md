@@ -4,7 +4,7 @@
 This repo presents an evolutionary algorithm (EA) capable of maximizing the sharpe ration
 for a given universe of 70.000 funds.
 
-The objective of this paper is twofold. First of all, it is shown how the EA can be used
+The objective of this repo is twofold. First of all, it is shown how the EA can be used
 to maximise the return of a portfolio while also minimising the risk. Secondly,
 calculates the efficient frontier from the explored assets.
 

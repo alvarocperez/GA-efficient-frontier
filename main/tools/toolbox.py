@@ -3,12 +3,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from collections import defaultdict
+from numpy.typing import ArrayLike
+from typing import Callable, Tuple
 
 from main.individual.individual import Individual
 
 
-def selection_rank_with_population_replacement_elite(population: list[Individual], elite_size=0.1, new_pop=0.2):
-    """Selection method."""
+def selection_rank_with_population_replacement_elite(
+    population: list[Individual], elite_size=0.1, new_pop=0.2
+) -> list[Individual]:
+    """Select the best individuals for the previous generation method.
+
+    Args:
+        population: The current population.
+        elite_size: The best n percent of individuals to include in the next generation.
+        new_pop: The n percent of migrants who will join the population. (new individuals)
+
+    Returns:
+        selected: Selected individuals.
+
+    """
     sorted_individuals = sorted(population, key=lambda ind: ind.get_sharpe(), reverse=True)
     best_n_individuals = int(np.floor(len(sorted_individuals) * elite_size))
     new_individuals = int(np.floor(len(sorted_individuals) * new_pop))
@@ -31,8 +45,18 @@ def selection_rank_with_population_replacement_elite(population: list[Individual
     return selected
 
 
-def mutation_operation(population, method, prob):
-    """Decides if the current individual must mutate or not"""
+def mutation_operation(population: list[Individual], method: Callable, prob: float) -> list[Individual]:
+    """Decides if the current individual must mutate or not.
+
+    Args:
+        population: Current population.
+        method: Function to use in crossover operation.
+        prob: float between 0 and 1.
+
+    Returns:
+        mutated_offspring: Mutated population.
+
+    """
     mutated_offspring = []
     for mutant in population:
         if random.random() < prob:
@@ -43,8 +67,24 @@ def mutation_operation(population, method, prob):
     return mutated_offspring
 
 
-def mutation_stocks_fitness_driven(ind, max_tries=3):
-    """Mutation operation."""
+def mutation_stocks_fitness_driven(ind: Individual, max_tries: int = 3) -> Individual:
+    """Mutation operation.
+
+    This mutation approach selects n random stocks from the Individual
+    and replaces them with the same number of assets randomly chosen
+    from the asset universe. If the resultan individual is better than
+    the initial individual it will replace the initial one. Otherwise,
+    it will be reattempted as many times as indicated by the argument
+    max_retries.
+
+    Args:
+        ind: The given individual to mutate.
+        max_tries: Max number of retries.
+
+    Returns:
+        Initial or mutated individual.
+
+    """
     for t in range(0, max_tries):
         mut_s = copy.deepcopy(ind.portfolio_idx)
         mut_w = copy.deepcopy(ind.portfolio_weights)
@@ -58,16 +98,16 @@ def mutation_stocks_fitness_driven(ind, max_tries=3):
     return ind
 
 
-def crossover_operation(population, method, prob):
+def crossover_operation(population: list[Individual], method: Callable, prob: float) -> list[Individual]:
     """Decides if the current individual must be selected for crossover operation.
 
-    :arg:
-        population (List[Individual]): Current population.
-        method (Function): Function to use in crossover operation.
-        prob (float): float between 0 and 1.
+    Args:
+        population: Current population.
+        method: Function to use in crossover operation.
+        prob: float between 0 and 1.
 
-    :return:
-        crossed_offspring (List[Individual]): crossed offspring population.
+    Returns:
+        crossed_offspring: Crossed offspring population.
 
     """
     crossed_offspring = []
@@ -83,14 +123,40 @@ def crossover_operation(population, method, prob):
     best_of_population = max(population, key=lambda ind: ind.get_sharpe())
     best_of_offspring = max(crossed_offspring, key=lambda ind: ind.get_sharpe())
 
-    if best_of_population.get_sharpe() > best_of_offspring.get_sharpe():  # a bit of elitism could be healthy
+    if best_of_population.get_sharpe() > best_of_offspring.get_sharpe():  # TODO: It's not an ordered list!!!
         crossed_offspring[-1] = best_of_population
 
     return crossed_offspring
 
 
-def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
-    """Crossover operation"""
+def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual) -> Tuple[Individual, Individual]:
+    """Crossover operation.
+
+    Since this approach allows for mutations among the assets of the individuals,
+    I have limited the maximum number of assets that an individual can have to 20.
+    This means that mod 20 will be used to prevent the number of assets of the individual
+    from getting larger and larger.
+
+    For each pair of individuals whose number of assets adds up to less than 20 assets,
+    the offspring will have the sum of both parents (avoiding duplicities) and the weights
+    will be inherited according to the following equation:
+
+    > Offspring A = α ∗ Parent1 + (1 -α) ∗ Parent2.
+    > Offspring B = (1 -α) ∗ Parent1 + α ∗ Parent2
+
+    Where α is a random number between 0 and 1.
+
+    On the other hand, if two parents have 14 and 17 assets respectively due to work in
+    module 20 their offspring will have 11 assets.
+
+    Args:
+        parent1: First individual.
+        parent2: Second individual.
+
+    Returns:
+        child1 & child2 both crossed offspring.
+
+    """
     alpha = np.random.rand()
     l1 = len(parent1.portfolio_idx)
     l2 = len(parent2.portfolio_idx)
@@ -100,7 +166,6 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
     p2f = parent2.portfolio_idx
 
     if l1 + l2 > 20:
-        # for child 1
         from_p1 = int(np.floor(l1 * 0.5)) if l1 % 2 == 0 else int(np.ceil(l1 * 0.5))
         from_p2 = int(np.floor(l2 * 0.5)) if l2 % 2 == 0 else int(np.ceil(l2 * 0.5))
 
@@ -114,9 +179,7 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
         c1w.extend(list(p2w[p2_idx]))
         c1w /= sum(c1w)
 
-        # for child 2
-
-        l = (l1 + l2) % 20  # if his length is 1
+        l = (l1 + l2) % 20
 
         if l == 0:
 
@@ -141,7 +204,6 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
                 c2pf = p2f[p_idx]
                 c2w = [1]
         else:
-
             p = int(np.floor(l * 0.5)) if l1 % 2 == 0 else int(np.ceil(l * 0.5))
             delta = l - p
             p1_idx = random.sample(range(0, l1), p)
@@ -167,7 +229,7 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
 
     else:
         cf = list(p1f)
-        cf.extend(list(p2f))  # child folio
+        cf.extend(list(p2f))
 
         c1w1 = p1w * alpha
         c1w2 = p2w * (1 - alpha)
@@ -194,7 +256,26 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual):
     return child1, child2
 
 
-def stats(population, best_ind, fit_avg, fit_best, fit_best_ever):
+def stats(
+    population: list[Individual],
+    best_ind: Individual,
+    fit_avg: list[float],
+    fit_best: list[float],
+    fit_best_ever: list[float],
+) -> Tuple[Individual, list[float], list[float], list[float]]:
+    """Return the most relevant individuals.
+
+    Args:
+        population: Current population.
+        best_ind: Previous population bet individual.
+        fit_avg: Fitness average of current population.
+        fit_best: Fitness of the best individual for the current population.
+        fit_best_ever: The best fittness ever registered.
+
+    Returns:
+        Tuple[best_ind, fit_avg, fit_best, fit_best_ever]: updated values for the current population.
+
+    """
     best_of_generation = max(population, key=lambda ind: ind.get_sharpe())
     if best_ind.get_sharpe() < best_of_generation.get_sharpe():
         best_ind = best_of_generation
@@ -205,7 +286,15 @@ def stats(population, best_ind, fit_avg, fit_best, fit_best_ever):
     return best_ind, fit_avg, fit_best, fit_best_ever
 
 
-def plot_stats(fit_avg, fit_best_ever, title):
+def plot_stats(fit_avg: list[float], fit_best_ever: list[float], title: str):
+    """Plot the best and the average fitness for each generation.
+
+    Args:
+        fit_avg: List of fitness averages.
+        fit_best_ever: The best fitness for each generation.
+        title: Just a title.
+
+    """
     plt.plot(fit_avg, label="Average Fitness of Gen")
     plt.plot(fit_best_ever, label="Best Fitness")
     plt.title(title)
@@ -213,16 +302,61 @@ def plot_stats(fit_avg, fit_best_ever, title):
     plt.show()
 
 
-def dupl_pmcguire(seq):
-    """Optimal way to classify repeated values."""
+def plot_frontier(risk: list[float], ret: list[float], lr: Individual, br: Individual, bs: Individual):
+    """Plot Markowitz efficient frontier.
+
+    Args:
+        risk: List of all individuals risk.
+        ret: List of all individuals returns.
+        lr: Lowest risk individual.
+        br: Best return individual.
+        bs: Best sharpe ratio individual.
+
+    """
+    plt.figure(figsize=(20, 15))
+    plt.scatter(risk, ret, c=list(np.divide(ret, risk)), cmap="viridis", linewidths=1)
+    plt.colorbar(label="Sharpe Ratio")
+    plt.xlabel("Volatility")
+    plt.ylabel("Return")
+    plt.scatter(lr.risk(), lr.expected_return(), s=500, c="red", marker=(5, 2))
+    plt.scatter(bs.risk(), bs.expected_return(), s=300, c="green", marker=(5, 1))
+    plt.scatter(br.risk(), br.expected_return(), s=300, c="yellow", marker=(5, 0))
+    plt.show()
+
+
+def dupl_pmcguire(seq: ArrayLike) -> dict:
+    """Optimal way to classify repeated values.
+
+    Args:
+        seq: NumPy Array object with numeric values.
+
+    Returns:
+        Dictionary where keys are the repeated element in the array and value
+        is a list with the position of the kye in the given array.
+
+    """
     tally = defaultdict(list)
     for i, item in enumerate(seq):
         tally[item].append(i)
     return dict([(key, locs) for key, locs in tally.items() if len(locs) > 1])
 
 
-def merge_duplicates(portfolio_idx, porfolio_weights):
-    """Merge duplicated values."""
+def merge_duplicates(portfolio_idx: ArrayLike, porfolio_weights: ArrayLike) -> Tuple[ArrayLike, ArrayLike]:
+    """Merge duplicated values.
+
+    Due to the crossover operation some individuals may have repeated stocks indices,
+    this functions merge all of them into one single stock where the weight is the
+    aggregated sum of all repeated instances.
+
+    Args:
+        portfolio_idx: Indices of the current allocations.
+        porfolio_weights: Weights for each allocation.
+
+    Returns:
+        pfi: Indices if the stocks in the asset universe.
+        pfw: Weights for each asset.
+
+    """
     where = dupl_pmcguire(portfolio_idx)
     pf = []
     w = []
@@ -232,11 +366,14 @@ def merge_duplicates(portfolio_idx, porfolio_weights):
     portfolio_idx = np.delete(portfolio_idx, idx)
 
     for v in where.values():
-        pesos = sum(porfolio_weights[v])
-        w.append(pesos)
+        weights = sum(porfolio_weights[v])
+        w.append(weights)
 
     porfolio_weights = np.delete(porfolio_weights, idx)
     pf.extend(portfolio_idx)
     w.extend(porfolio_weights)
 
-    return np.array(pf), np.array(w)
+    pfi = np.array(pf)
+    pfw = np.array(w)
+
+    return pfi, pfw

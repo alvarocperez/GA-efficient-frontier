@@ -1,4 +1,3 @@
-> Best sharpe ratio using a genetic algorithm
 
 ## :chart_with_upwards_trend: Best sharpe ratio using genetic algorithms
 

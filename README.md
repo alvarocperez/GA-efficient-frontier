@@ -1,7 +1,7 @@
 
 ## :chart_with_upwards_trend: Best sharpe ratio using genetic algorithms
 
-This repo presents an evolutionary algorithm (EA) capable of maximizing the sharpe ration
+This repo presents an evolutionary algorithm (EA) capable of maximizing the sharpe ratio
 for a given universe of 70.000 funds.
 
 The objective of this repo is twofold. First of all, it is shown how the EA can be used

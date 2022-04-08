@@ -1,6 +1,13 @@
 
 ## :chart_with_upwards_trend: Best sharpe ratio using genetic algorithms
 
+This repo presents an evolutionary algorithm (EA) capable of maximizing the sharpe ration
+for a given universe of 70.000 funds.
+
+The objective of this paper is twofold. First of all, it is shown how the EA can be used
+to maximise the return of a portfolio while also minimising the risk. Secondly,
+calculates the efficient frontier from the explored assets.
+
 ![Efficient Frontier](docs/img/efficient_frontier.png)
 
 ### :pill: What is a genetic algorithm?

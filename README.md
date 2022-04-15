@@ -22,6 +22,6 @@ of better performance in solution space.
 The sharpe ratio is the average return earned in excess of the risk-free rate per unit
 of volatility or total risk.
 
-#### How this ratio is calculated?
+#### :hammer: How this ratio is calculated?
 
 ![sharpe ratio formula](docs/img/formula.png)

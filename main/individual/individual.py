@@ -55,7 +55,7 @@ class Individual:
         """Return closing prices of this porfolio.
 
         Returns:
-            Dataframe with the closing prices of each stock of the portfolio.
+            Dataframe with the closing prices of the portfolio.
 
         """
         return self.universe.iloc[:, self.portfolio_idx]

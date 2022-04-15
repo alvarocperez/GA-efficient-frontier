@@ -12,7 +12,7 @@ from main.individual.individual import Individual
 def selection_rank_with_population_replacement_elite(
     population: list[Individual], elite_size=0.1, new_pop=0.2
 ) -> list[Individual]:
-    """Select the best individuals for the previous generation method.
+    """Select the best individuals from the current generation.
 
     Args:
         population: The current population.
@@ -34,11 +34,15 @@ def selection_rank_with_population_replacement_elite(
     for i in range(len(sorted_individuals) - best_n_individuals - new_individuals):
         shave = random.random() * ranks_sum
         rank_sum = 0
-        for i in range(len(sorted_individuals)):
+        i = 0
+        stop = False
+        while i <= len(sorted_individuals) and not stop:
             rank_sum += ranks[i]
             if rank_sum > shave:
                 selected.append(sorted_individuals[i])
-                break
+                stop = True
+            i += 1
+
     new_individuals = [Individual.create_random() for _ in range(new_individuals)]
     selected.extend(new_individuals)
 
@@ -141,7 +145,7 @@ def arithmetic_roulette_crossover(parent1: Individual, parent2: Individual) -> T
     the offspring will have the sum of both parents (avoiding duplicities) and the weights
     will be inherited according to the following equation:
 
-    > Offspring A = α ∗ Parent1 + (1 -α) ∗ Parent2.
+    > Offspring A = α ∗ Parent1 + (1 -α) ∗ Parent2
     > Offspring B = (1 -α) ∗ Parent1 + α ∗ Parent2
 
     Where α is a random number between 0 and 1.
